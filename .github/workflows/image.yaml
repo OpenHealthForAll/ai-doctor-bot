@@ -55,13 +55,6 @@ jobs:
           cache-to: type=gha,mode=max
           file: Containerfile
 
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.ghcr_push.outputs.digest }}
-          push-to-registry: true
-
       - name: Remove Local Docker Images
         run: |
           docker image prune -af
