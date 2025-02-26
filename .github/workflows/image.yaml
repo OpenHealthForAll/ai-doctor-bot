@@ -1,0 +1,67 @@
+name: Build ai-doctor-bot container image
+
+env:
+  GHCR_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{github.repository}}
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the GHCR container image registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Extract metadata (tags, labels) for docling-serve ghcr image
+        id: ghcr_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push image to ghcr.io
+        id: ghcr_push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          tags: ${{ steps.ghcr_meta.outputs.tags }}
+          labels: ${{ steps.ghcr_meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          file: Containerfile
+
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.ghcr_push.outputs.digest }}
+          push-to-registry: true
+
+      - name: Remove Local Docker Images
+        run: |
+          docker image prune -af

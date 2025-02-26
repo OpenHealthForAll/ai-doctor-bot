@@ -4,10 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e86d6365-87c2-4378-a401-cd294d3055b9" name="변경" comment="poetry support">
-      <change afterPath="$PROJECT_DIR$/Containerfile" afterDir="false" />
+    <list default="true" id="e86d6365-87c2-4378-a401-cd294d3055b9" name="변경" comment="containerize">
+      <change afterPath="$PROJECT_DIR$/.github/workflows/image.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -75,7 +74,7 @@
       <option name="presentableId" value="Default" />
       <updated>1740579934473</updated>
       <workItem from="1740579935513" duration="113000" />
-      <workItem from="1740580054132" duration="905000" />
+      <workItem from="1740580054132" duration="1800000" />
     </task>
     <task id="LOCAL-00001" summary="poetry support">
       <option name="closed" value="true" />
@@ -93,7 +92,23 @@
       <option name="project" value="LOCAL" />
       <updated>1740580138591</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="update workspace.xml">
+      <option name="closed" value="true" />
+      <created>1740581010735</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1740581010735</updated>
+    </task>
+    <task id="LOCAL-00004" summary="containerize">
+      <option name="closed" value="true" />
+      <created>1740581023767</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1740581023767</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -101,7 +116,9 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="poetry support" />
-    <option name="LAST_COMMIT_MESSAGE" value="poetry support" />
+    <MESSAGE value="update workspace.xml" />
+    <MESSAGE value="containerize" />
+    <option name="LAST_COMMIT_MESSAGE" value="containerize" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/ai_doctor_bot$main.coverage" NAME="main 커버리지 결과" MODIFIED="1740580008708" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
