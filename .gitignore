@@ -3,3 +3,6 @@ node_modules
 # Keep environment variables out of version control
 .env
 .venv
+
+# Secret Values
+charts/chart/values-secret.yaml
