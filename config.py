@@ -1,11 +1,13 @@
-from dotenv import dotenv_values
+import os
 
-config = dotenv_values(".env")
+from dotenv import load_dotenv
 
-REDDIT_USERNAME = config.get('REDDIT_USERNAME')
-REDDIT_PASSWORD = config.get('REDDIT_PASSWORD')
-REDDIT_USER_AGENT = config.get('REDDIT_USER_AGENT')
-REDDIT_CLIENT_ID = config.get('REDDIT_CLIENT_ID')
-REDDIT_CLIENT_SECRET = config.get('REDDIT_CLIENT_SECRET')
-REDDIT_SUBREDDIT = config.get('REDDIT_SUBREDDIT')
-SLEEP_DURATION = config.get('SLEEP_DURATION')
+load_dotenv()
+
+REDDIT_USERNAME = os.getenv('REDDIT_USERNAME')
+REDDIT_PASSWORD = os.getenv('REDDIT_PASSWORD')
+REDDIT_USER_AGENT = os.getenv('REDDIT_USER_AGENT')
+REDDIT_CLIENT_ID = os.getenv('REDDIT_CLIENT_ID')
+REDDIT_CLIENT_SECRET = os.getenv('REDDIT_CLIENT_SECRET')
+REDDIT_SUBREDDIT = os.getenv('REDDIT_SUBREDDIT')
+SLEEP_DURATION = os.getenv('SLEEP_DURATION')
