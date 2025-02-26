@@ -1,0 +1,4 @@
+image:
+  repository: ghcr.io/openhealthforall/ai-doctor-bot
+  tag: main
+  pullPolicy: IfNotPresent
