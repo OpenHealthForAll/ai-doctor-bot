@@ -54,6 +54,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           file: Containerfile
+          push: true
 
       - name: Remove Local Docker Images
         run: |
