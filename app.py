@@ -9,12 +9,17 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import HumanMessagePromptTemplate, ChatPromptTemplate
 
 from config import REDDIT_PASSWORD, REDDIT_USERNAME, REDDIT_SUBREDDIT, REDDIT_USER_AGENT, REDDIT_CLIENT_ID, \
-    REDDIT_CLIENT_SECRET, SLEEP_DURATION
+    REDDIT_CLIENT_SECRET, SLEEP_DURATION, ASSISTANT_MODE_ID
 from log import logger
 from prisma import Client as PrismaClient
 
 
 async def main():
+    logger.info('Starting Reddit bot')
+    logger.info('Subreddit: {}'.format(REDDIT_SUBREDDIT))
+    logger.info('Sleep duration: {}'.format(SLEEP_DURATION))
+    logger.info('Assistant mode ID: {}'.format(ASSISTANT_MODE_ID))
+
     reddit = asyncpraw.Reddit(
         username=REDDIT_USERNAME,
         password=REDDIT_PASSWORD,
@@ -52,11 +57,9 @@ async def main():
             })
 
             # Get the assistant mode
-            assistant_mode = await prisma.assistantmode.find_first(
-                where={'name': 'Root Cause Analysis & Long Term Health.'},
-                include={
-                    'llmProvider': True,
-                }
+            assistant_mode = await prisma.assistantmode.find_unique(
+                where={'id': ASSISTANT_MODE_ID},
+                include={'llmProvider': True}
             )
             model_provider = assistant_mode.llmProvider.providerId if assistant_mode.llmProvider is not None else 'openai'
             model = assistant_mode.llmProviderModelId if assistant_mode.llmProvider is not None else 'gpt-4o-mini'
