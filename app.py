@@ -41,20 +41,29 @@ async def main():
             created_at = post.created_utc
 
             # Check if post already exists
-            reddit_post = await prisma.redditpost.find_unique(where={'postId': post_id})
-            if reddit_post:
+            reddit_post_comment = await prisma.redditpostcomment.find_first(where={
+                'postId': post_id,
+                'assistantModeId': ASSISTANT_MODE_ID
+            })
+            if reddit_post_comment is not None:
                 continue
 
             logger.info('New post: {}'.format(title))
 
-            # Create a new post
-            await prisma.redditpost.create(data={
-                'postId': post_id,
-                'title': title,
-                'content': content,
-                'createdAt': datetime.fromtimestamp(created_at),
-                'updatedAt': datetime.fromtimestamp(created_at)
-            })
+            # Upsert a new post
+            await prisma.redditpost.upsert(
+                where={'postId': post_id},
+                data={
+                    'create': {
+                        'postId': post_id,
+                        'title': title,
+                        'content': content,
+                        'createdAt': datetime.fromtimestamp(created_at),
+                        'updatedAt': datetime.fromtimestamp(created_at)
+                    },
+                    'update': {}
+                }
+            )
 
             # Get the assistant mode
             assistant_mode = await prisma.assistantmode.find_unique(
@@ -83,6 +92,7 @@ async def main():
             await prisma.redditpostcomment.create(data={
                 'postId': post_id,
                 'commentId': comment_response.id,
+                'assistantModeId': ASSISTANT_MODE_ID,
                 'content': comment,
                 'createdAt': datetime.fromtimestamp(comment_response.created_utc),
                 'updatedAt': datetime.fromtimestamp(comment_response.created_utc),
