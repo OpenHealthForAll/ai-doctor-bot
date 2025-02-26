@@ -25,7 +25,8 @@ async def main():
         password=REDDIT_PASSWORD,
         client_id=REDDIT_CLIENT_ID,
         client_secret=REDDIT_CLIENT_SECRET,
-        user_agent=REDDIT_USER_AGENT
+        user_agent=REDDIT_USER_AGENT,
+        ratelimit_seconds=600,
     )
     prisma = PrismaClient()
     await prisma.connect()
