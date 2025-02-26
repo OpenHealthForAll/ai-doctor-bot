@@ -53,12 +53,17 @@ async def main():
 
             # Get the assistant mode
             assistant_mode = await prisma.assistantmode.find_first(
-                where={'name': 'Root Cause Analysis & Long Term Health.'}
+                where={'name': 'Root Cause Analysis & Long Term Health.'},
+                include={
+                    'llmProvider': True,
+                }
             )
+            model_provider = assistant_mode.llmProvider.providerId if assistant_mode.llmProvider is not None else 'openai'
+            model = assistant_mode.llmProviderModelId if assistant_mode.llmProvider is not None else 'gpt-4o-mini'
 
             # Generate comment content
             logger.info('Generating comment for post: {}'.format(title))
-            chat_model = init_chat_model('gpt-4o-mini', model_provider='openai')
+            chat_model = init_chat_model(model, model_provider=model_provider)
             messages = ChatPromptTemplate.from_messages([
                 SystemMessage(assistant_mode.systemPrompt),
                 HumanMessagePromptTemplate.from_template(
