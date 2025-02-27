@@ -40,7 +40,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
-      - name: Extract metadata (tags, labels) for docling-serve ghcr image
+      - name: Extract metadata (tags, labels) for ai-doctor-bot ghcr image
         id: ghcr_meta
         uses: docker/metadata-action@v5
         with:
