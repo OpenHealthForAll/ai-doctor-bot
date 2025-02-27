@@ -112,7 +112,7 @@ async def main():
             messages = ChatPromptTemplate.from_messages([
                 SystemMessage(assistant_mode.systemPrompt),
                 HumanMessagePromptTemplate.from_template(
-                    'Please write your answer in 2 sentences or less.\n\n{title}\n{content}')
+                    'Please write your answer to this post. \n\n{title}\n{content}')
             ])
             chain = messages | chat_model | StrOutputParser()
             comment = chain.invoke(
