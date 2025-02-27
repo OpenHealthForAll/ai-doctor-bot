@@ -18,6 +18,13 @@ spec:
         - name: {{ .name }}
           image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
           imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          resources:
+            requests:
+              cpu: "0.5"
+              memory: "512Mi"
+            limits:
+              cpu: "0.5"
+              memory: "512Mi"
           env:
             {{- range $key, $value := .env }}
             - name: {{ $key }}
