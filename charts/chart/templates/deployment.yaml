@@ -20,11 +20,11 @@ spec:
           imagePullPolicy: {{ $.Values.image.pullPolicy }}
           resources:
             requests:
-              cpu: "0.5"
-              memory: "512Mi"
+              cpu: "0.25"
+              memory: "256Mi"
             limits:
-              cpu: "0.5"
-              memory: "512Mi"
+              cpu: "0.25"
+              memory: "256Mi"
           env:
             {{- range $key, $value := .env }}
             - name: {{ $key }}
