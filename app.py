@@ -7,11 +7,34 @@ from langchain.chat_models import init_chat_model
 from langchain_core.messages import SystemMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import HumanMessagePromptTemplate, ChatPromptTemplate
+from pydantic import BaseModel, Field
 
 from config import REDDIT_PASSWORD, REDDIT_USERNAME, REDDIT_SUBREDDIT, REDDIT_USER_AGENT, REDDIT_CLIENT_ID, \
     REDDIT_CLIENT_SECRET, SLEEP_DURATION, ASSISTANT_MODE_ID
 from log import logger
 from prisma import Client as PrismaClient
+
+prisma = PrismaClient()
+
+
+class IsNeedMedicalAdvice(BaseModel):
+    is_need_advice: bool = Field(description="Determine whether the following Reddit post requires a medical response.")
+
+
+async def is_need_medical_advice(post_id: str, title: str, content: str) -> bool:
+    reddit_post = await prisma.redditpost.find_first(where={'postId': post_id})
+    if reddit_post is not None:
+        return reddit_post.isMedicalAdviceRequired
+
+    model = init_chat_model('gpt-4o-mini', model_provider='openai')
+    messages = ChatPromptTemplate.from_messages([
+        HumanMessagePromptTemplate.from_template(
+            """Determine whether the following Reddit post requires a medical response. Reply with 'true' if a medical response is needed, otherwise reply with 'false'. Answer only with 'true' or 'false', nothing else.\nTitle: {title}\nContent: {content}""")
+    ])
+    structured_llm = model.with_structured_output(IsNeedMedicalAdvice)
+    chain = messages | structured_llm
+    response = chain.invoke({'title': title, 'content': content}, config={'run_name': 'reddit-medical-advice'})
+    return response.is_need_advice
 
 
 async def main():
@@ -28,7 +51,6 @@ async def main():
         user_agent=REDDIT_USER_AGENT,
         ratelimit_seconds=600,
     )
-    prisma = PrismaClient()
     await prisma.connect()
 
     while True:
@@ -41,6 +63,31 @@ async def main():
             content = post.selftext
             created_at = post.created_utc
 
+            # Check if post requires medical advice
+            is_need_advice = await is_need_medical_advice(post_id=post_id, title=title, content=content)
+
+            # Upsert post
+            await prisma.redditpost.upsert(
+                where={'postId': post_id},
+                data={
+                    'create': {
+                        'postId': post_id,
+                        'title': title,
+                        'content': content,
+                        'isMedicalAdviceRequired': is_need_advice,
+                        'createdAt': datetime.fromtimestamp(created_at),
+                        'updatedAt': datetime.fromtimestamp(created_at)
+                    },
+                    'update': {
+                        'isMedicalAdviceRequired': is_need_advice,
+                    }
+                }
+            )
+
+            # Skip if post does not require medical advice
+            if is_need_advice is False:
+                continue
+
             # Check if post already exists
             reddit_post_comment = await prisma.redditpostcomment.find_first(where={
                 'postId': post_id,
@@ -50,21 +97,6 @@ async def main():
                 continue
 
             logger.info('New post: {}'.format(title))
-
-            # Upsert a new post
-            await prisma.redditpost.upsert(
-                where={'postId': post_id},
-                data={
-                    'create': {
-                        'postId': post_id,
-                        'title': title,
-                        'content': content,
-                        'createdAt': datetime.fromtimestamp(created_at),
-                        'updatedAt': datetime.fromtimestamp(created_at)
-                    },
-                    'update': {}
-                }
-            )
 
             # Get the assistant mode
             assistant_mode = await prisma.assistantmode.find_unique(
