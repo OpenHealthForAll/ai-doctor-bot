@@ -80,10 +80,13 @@ async def main():
             messages = ChatPromptTemplate.from_messages([
                 SystemMessage(assistant_mode.systemPrompt),
                 HumanMessagePromptTemplate.from_template(
-                    'Please write your answer in 2 sentences or less.\n\n{content}')
+                    'Please write your answer in 2 sentences or less.\n\n{title}\n{content}')
             ])
             chain = messages | chat_model | StrOutputParser()
-            comment = chain.invoke({'content': content})
+            comment = chain.invoke(
+                {'content': content, 'title': title},
+                config={'run_name': 'reddit-comment'}
+            )
             logger.info('Comment generated: {}'.format(comment))
 
             # Post the comment
