@@ -21,6 +21,12 @@ class IsNeedMedicalAdvice(BaseModel):
     is_need_advice: bool = Field(description="Determine whether the following Reddit post requires a medical response.")
 
 
+class Submission(BaseModel):
+    id: str = Field(description="The ID of the Reddit submission.")
+    title: str = Field(description="The title of the Reddit submission.")
+    content: str = Field(description="The content of the Reddit submission.")
+
+
 async def is_need_medical_advice(post_id: str, title: str, content: str) -> bool:
     reddit_post = await prisma.redditpost.find_first(where={'postId': post_id})
     if reddit_post is not None:
@@ -35,6 +41,25 @@ async def is_need_medical_advice(post_id: str, title: str, content: str) -> bool
     chain = messages | structured_llm
     response = chain.invoke({'title': title, 'content': content}, config={'run_name': 'reddit-medical-advice'})
     return response.is_need_advice
+
+
+async def get_submission_title_and_content(reddit, submission_id: str) -> [Submission, Submission | None]:
+    submission = await reddit.submission(id=submission_id)
+
+    title = submission.title
+    content = submission.selftext
+    cross_post_parent = None
+
+    try:
+        if submission.crosspost_parent is not None:
+            cross_post_parent_id = submission.crosspost_parent[3:]
+
+            cross_post = await reddit.submission(id=cross_post_parent_id)
+            cross_post_parent = Submission(id=cross_post_parent_id, title=cross_post.title, content=cross_post.selftext)
+    except AttributeError:
+        cross_post_parent = None
+
+    return Submission(id=submission_id, title=title, content=content), cross_post_parent
 
 
 async def main():
@@ -106,17 +131,25 @@ async def main():
             model_provider = assistant_mode.llmProvider.providerId if assistant_mode.llmProvider is not None else 'openai'
             model = assistant_mode.llmProviderModelId if assistant_mode.llmProvider is not None else 'gpt-4o-mini'
 
+            # Get the submission title and content
+            self, parent = await get_submission_title_and_content(reddit, submission_id=post_id)
+            message_template = 'Please write your answer to this post. \n\n{title}\n{content}' if parent is None else 'Please write your answer to this post. \n\n{title}\n{content}\n\nParent post: {parent_title}\n{parent_content}'
+
             # Generate comment content
             logger.info('Generating comment for post: {}'.format(title))
             chat_model = init_chat_model(model, model_provider=model_provider)
             messages = ChatPromptTemplate.from_messages([
                 SystemMessage(assistant_mode.systemPrompt),
-                HumanMessagePromptTemplate.from_template(
-                    'Please write your answer to this post. \n\n{title}\n{content}')
+                HumanMessagePromptTemplate.from_template(message_template)
             ])
             chain = messages | chat_model | StrOutputParser()
             comment = chain.invoke(
-                {'content': content, 'title': title},
+                {
+                    'content': self.content,
+                    'title': self.title,
+                    'parent_content': parent.content if parent is not None else None,
+                    'parent_title': parent.title if parent is not None else None
+                },
                 config={'run_name': 'reddit-comment'}
             )
             logger.info('Comment generated: {}'.format(comment))
