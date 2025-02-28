@@ -27,19 +27,29 @@ class Submission(BaseModel):
     content: str = Field(description="The content of the Reddit submission.")
 
 
-async def is_need_medical_advice(post_id: str, title: str, content: str) -> bool:
+async def is_need_medical_advice(reddit, post_id: str, title: str, content: str) -> bool:
     reddit_post = await prisma.redditpost.find_first(where={'postId': post_id})
     if reddit_post is not None:
         return reddit_post.isMedicalAdviceRequired
 
+    self, parent = await get_submission_title_and_content(reddit, post_id)
+    message_template = 'Determine whether the following Reddit post requires a medical response. Reply with \'true\' if a medical response is needed, otherwise reply with \'false\'. Answer only with \'true\' or \'false\', nothing else.\nTitle: {title}\nContent: {content}' if parent is None else 'Determine whether the following Reddit post requires a medical response. Reply with \'true\' if a medical response is needed, otherwise reply with \'false\'. Answer only with \'true\' or \'false\', nothing else.\nTitle: {title}\nContent: {content}\n\nParent post: {parent_title}\n{parent_content}'
+
     model = init_chat_model('gpt-4o-mini', model_provider='openai')
     messages = ChatPromptTemplate.from_messages([
-        HumanMessagePromptTemplate.from_template(
-            """Determine whether the following Reddit post requires a medical response. Reply with 'true' if a medical response is needed, otherwise reply with 'false'. Answer only with 'true' or 'false', nothing else.\nTitle: {title}\nContent: {content}""")
+        HumanMessagePromptTemplate.from_template(message_template)
     ])
     structured_llm = model.with_structured_output(IsNeedMedicalAdvice)
     chain = messages | structured_llm
-    response = chain.invoke({'title': title, 'content': content}, config={'run_name': 'reddit-medical-advice'})
+    response = chain.invoke(
+        {
+            'title': title,
+            'content': content,
+            'parent_title': parent.title if parent is not None else None,
+            'parent_content': parent.content if parent is not None else None
+        },
+        config={'run_name': 'reddit-medical-advice'}
+    )
     return response.is_need_advice
 
 
@@ -89,7 +99,7 @@ async def main():
             created_at = post.created_utc
 
             # Check if post requires medical advice
-            is_need_advice = await is_need_medical_advice(post_id=post_id, title=title, content=content)
+            is_need_advice = await is_need_medical_advice(reddit, post_id=post_id, title=title, content=content)
 
             # Upsert post
             await prisma.redditpost.upsert(
